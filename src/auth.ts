@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import type { NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import Google from "next-auth/providers/google";
@@ -8,8 +8,8 @@ import { verifyPassword } from "./lib/crypto";
 
 export const authConfig = {
   secret: process.env.AUTH_SECRET,
-  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
-  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" as const, maxAge: 60 * 60 * 24 * 7 },
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     EmailProvider({
       server: {
@@ -56,12 +56,39 @@ export const authConfig = {
 
         return {
           id: user.id,
-          email: user.email,
-          name: user.name,
+          email: user.email ?? "",
+          name: user.name ?? "",
           image: user.image,
           role: user.role,
         };
       },
     }),
   ],
+  pages: {
+    signIn: "/signin",
+  },
+  callbacks: {
+    async jwt({ user, token }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.image = user.image ?? null;
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.image = token.image;
+      }
+
+      return session;
+    },
+  },
 } satisfies NextAuthOptions;
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+export const GET = handlers.get;
+export const POST = handlers.post;
