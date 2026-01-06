@@ -1,0 +1,14 @@
+services:
+  auth_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres}
+      POSTGRES_DB: ${PGDB:-authdb}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
