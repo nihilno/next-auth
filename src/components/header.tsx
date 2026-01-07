@@ -1,11 +1,10 @@
 import { auth, signOut } from "@/auth";
-import Image from "next/image";
 import Link from "next/link";
 
 async function Header() {
   const session = await auth();
   const role = session?.user?.role;
-  const image = session?.user?.image;
+  const image = session?.user.image;
   const name = session?.user?.name;
   const headerStyles =
     "py-6 px-4 border-b border-dashed flex items-center justify-evenly";
@@ -16,16 +15,18 @@ async function Header() {
         <Link href="/" className="text-xl font-bold">
           H
         </Link>
-        <h2>The session is</h2>
         <nav>
-          <Link href={"/dashboard"}>Go to dashboard</Link>
+          <Link href={"/dashboard"} className="text-xl font-bold">
+            /
+          </Link>
         </nav>
-        <p className="text-sm">
-          Welcome <strong>{session?.user || "Unnamed"}</strong>, your role is ,
-          your email is <strong>{session?.user.email || "Unknown."}</strong>
-          <strong>{role || "Unknown"}</strong>.
-        </p>
-        <Image src={image} alt={name} width={64} height={64} />
+
+        <div className="text-xs">
+          <p>{name || "Unknown name"}</p>
+          <p>{role}</p>
+          <p>{session.user.email}</p>
+          <p>{image || "null"}</p>
+        </div>
 
         {role === "admin" && (
           <div>
@@ -36,7 +37,12 @@ async function Header() {
           </div>
         )}
 
-        <form action={() => signOut()}>
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/" });
+          }}
+        >
           <button type="submit" className="border px-2">
             Log Out
           </button>
