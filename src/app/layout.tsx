@@ -1,4 +1,3 @@
-import Header from "@/components/header";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -23,7 +22,7 @@ export default function RootLayout({
       <body
         className={cn(inter.className, "flex min-h-dvh flex-col antialiased")}
       >
-        <Header />
+        {/* <Header /> */}
         <main className="flex flex-1 flex-col items-center justify-center">
           {children}
           <Toaster position="bottom-center" />

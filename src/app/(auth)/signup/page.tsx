@@ -41,8 +41,8 @@ export default function SignUpPage() {
   async function onSubmit(formData: schemaType) {
     const { success, message } = await Register(formData);
     if (success) {
+      form.reset();
       toast.success(message);
-      replace("/dashboard");
     } else {
       toast.info(message);
     }

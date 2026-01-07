@@ -7,7 +7,6 @@ async function Header() {
   const role = session?.user?.role;
   const image = session?.user?.image;
   const name = session?.user?.name;
-  console.log(session);
   const headerStyles =
     "py-6 px-4 border-b border-dashed flex items-center justify-evenly";
 
@@ -17,7 +16,7 @@ async function Header() {
         <Link href="/" className="text-xl font-bold">
           H
         </Link>
-        <h2>The session is {session}</h2>
+        <h2>The session is</h2>
         <nav>
           <Link href={"/dashboard"}>Go to dashboard</Link>
         </nav>

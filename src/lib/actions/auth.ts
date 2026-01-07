@@ -1,9 +1,11 @@
 "use server";
 
+import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { schema } from "@/lib/schemas";
+import { loginSchema, schema } from "@/lib/schemas";
 import { hashPassword } from "@/lib/utils";
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 import { sendVerificationEmail } from "../mail";
 
 export async function Register(formData: unknown) {
@@ -77,4 +79,81 @@ export async function Register(formData: unknown) {
     success: true,
     message: "Account created successfully! Check your email to verify.",
   };
+}
+
+export async function doVerify(email: string, token: string) {
+  const vt = await prisma.verificationToken.findUnique({
+    where: {
+      identifier_token: {
+        identifier: email,
+        token,
+      },
+    },
+  });
+
+  if (!vt || vt.identifier !== email || vt.expires < new Date()) {
+    return { success: false, message: "Invalid or expired token." };
+  }
+
+  await prisma.user.update({
+    where: { email },
+    data: { emailVerified: new Date() },
+  });
+
+  await prisma.verificationToken.delete({
+    where: {
+      identifier_token: {
+        identifier: email,
+        token,
+      },
+    },
+  });
+
+  return { success: true, message: "Success." };
+}
+
+export async function Login(formData: unknown) {
+  const result = loginSchema.safeParse(formData);
+  if (!result.success) {
+    const firstIssue = result.error.issues[0];
+    const message = firstIssue.message || "Invalid data provided";
+
+    return {
+      success: false,
+      message,
+    };
+  }
+
+  const { email, password } = result.data;
+
+  try {
+    if (!email || !password)
+      return {
+        success: false,
+        message: "Missing required fields.",
+      };
+
+    const response = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (response.error) {
+      return {
+        success: false,
+        message: "Unexpected error, try again later. 1",
+      };
+    }
+
+    revalidatePath("/dashboard");
+    return { success: true, message: "Success" };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      message: "Wrong credentials. Try again.",
+    };
+  }
 }

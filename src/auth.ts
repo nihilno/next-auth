@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import crypto from "crypto";
 import NextAuth, { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Nodemailer from "next-auth/providers/nodemailer";
+import { sendVerificationEmail } from "./lib/mail";
 import { verifyPassword } from "./lib/utils";
 
 export const authConfig = {
@@ -49,8 +51,21 @@ export const authConfig = {
         );
         if (!isVerified) return null;
 
-        if (!user.emailVerified) {
-          throw new Error("Email not verified. Please check your inbox.");
+        if (user && !user.emailVerified) {
+          // Create verification token
+          const token = crypto.randomBytes(32).toString("hex");
+          const expires = new Date(Date.now() + 1000 * 60 * 30); // 30 mins;
+
+          await prisma.verificationToken.create({
+            data: { identifier: user.email!, token, expires },
+          });
+
+          // Create verification links
+          const base = process.env.NEXTAUTH_URL!;
+          // values encoded to uri
+          const link = `${base}/verify?token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email!)}`;
+
+          await sendVerificationEmail(user.email!, link);
         }
 
         return {
