@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 export default async function GetTokenPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token: string }>;
+  searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
   if (!token) redirect("/");
@@ -22,19 +22,18 @@ export default async function GetTokenPage({
   const used = tokenRecord?.usedAt;
 
   if (invalid || expired || used) {
+    let errorMessage = "";
+    if (invalid) {
+      errorMessage = "This reset link is invalid.";
+    } else if (used) {
+      errorMessage = "This reset link was already used.";
+    } else if (expired) {
+      errorMessage = "This reset link is expired.";
+    }
+
     return (
       <section className="space-y-1 text-center text-xl">
-        {invalid && (
-          <h1 className="text-destructive">This reset link is invalid.</h1>
-        )}
-        {expired && (
-          <h1 className="text-destructive">This reset link is expired.</h1>
-        )}
-        {used && (
-          <h1 className="text-destructive">
-            This reset link was already used.
-          </h1>
-        )}
+        <h1 className="text-destructive">{errorMessage}</h1>
         <Link href={"/signin"} className="mt-2 text-sm">
           Go back
         </Link>

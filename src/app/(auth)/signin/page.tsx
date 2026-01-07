@@ -105,7 +105,7 @@ export default function SignInPage() {
 
       <div className="mt-4 flex flex-col items-center gap-1 text-sm">
         <div className="flex gap-1">
-          <p>Dont have an account?</p>
+          <p>Don&apos;t have an account?</p>{" "}
           <Link className="underline" href={"/signup"}>
             Register
           </Link>

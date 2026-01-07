@@ -185,8 +185,8 @@ export async function ResetPassword(formData: unknown) {
 
     if (!user) {
       return {
-        success: false,
-        message: null,
+        success: true,
+        message: `If an account exists for ${email}, a reset link has been sent.`,
       };
     }
 
@@ -214,7 +214,7 @@ export async function ResetPassword(formData: unknown) {
 
     return {
       success: false,
-      message: "Invalid credentials.. Try again.",
+      message: "Something went wrong. Please try again later.",
     };
   }
 }
@@ -261,21 +261,20 @@ export async function SetNewPassword(formData: unknown, token: string) {
       };
     }
 
-    await prisma.user.update({
-      where: { id: tokenRecord.userId },
-      data: {
-        passwordHash: await hashPassword(newPassword),
-      },
-    });
-
-    await prisma.passwordResetToken.update({
-      where: { tokenHash },
-      data: { usedAt: new Date() },
-    });
-
+    const newHash = await hashPassword(newPassword);
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: tokenRecord.userId },
+        data: { passwordHash: newHash },
+      }),
+      prisma.passwordResetToken.update({
+        where: { tokenHash },
+        data: { usedAt: new Date() },
+      }),
+    ]);
     return {
       success: true,
-      message: "New password succesfully set.",
+      message: "New password successfully set.",
     };
   } catch (error) {
     console.error(error);

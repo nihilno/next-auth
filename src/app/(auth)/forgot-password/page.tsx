@@ -33,7 +33,6 @@ export default function ForgotPasswordPage() {
     } else {
       toast.info(message);
     }
-    console.log(formData);
   }
 
   return (
@@ -66,7 +65,9 @@ export default function ForgotPasswordPage() {
             type="submit"
             className="mt-2"
           >
-            {form.formState.isSubmitting ? "Resseting..." : "Reset password"}
+            {form.formState.isSubmitting
+              ? "Resetting..."
+              : "Reset password"}{" "}
           </Button>
         </form>
       </Form>

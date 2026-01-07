@@ -92,8 +92,13 @@
     @apply bg-background text-foreground;
   }
 
-  button {
+  button:not(:disabled):not([aria-disabled="true"]) {
     @apply cursor-pointer;
+  }
+
+  button:disabled,
+  button[aria-disabled="true"] {
+    @apply cursor-not-allowed;
   }
 
   input:-webkit-autofill {

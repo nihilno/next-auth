@@ -31,17 +31,19 @@ export default function SetPassword({ token }: { token: string }) {
   });
 
   async function onSubmit(formData: resetSchemaType) {
-    const { success, message } = await SetNewPassword(formData, token);
-    if (success) {
-      toast.success(message);
-      replace("/signin");
-    } else {
-      toast.info(message);
+    try {
+      const { success, message } = await SetNewPassword(formData, token);
+      if (success) {
+        toast.success(message);
+        replace("/signin");
+      } else {
+        toast.error(message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An unexpected error occurred. Please try again.");
     }
-
-    console.log(formData);
   }
-
   return (
     <Form {...form}>
       <form

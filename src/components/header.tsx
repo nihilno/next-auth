@@ -38,7 +38,7 @@ async function Header() {
         <div className="grid grid-cols-2 text-[11px]">
           <p>{name || "Unknown name"}</p>
           <p className="place-self-end pr-1.5">{role}</p>
-          <p className="col-span-2">{session.user.email}</p>
+          <p className="col-span-2">{session?.user?.email}</p>
         </div>
 
         {role === "admin" && (
@@ -46,9 +46,6 @@ async function Header() {
             <p className="text-yellow-500">
               Since you are {role}, you can go there
             </p>
-            <Link href={"/dashboard"}>
-              <LayoutDashboard className="size-5" />
-            </Link>
           </div>
         )}
       </header>
