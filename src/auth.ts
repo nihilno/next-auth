@@ -1,27 +1,26 @@
 import { prisma } from "@/lib/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import EmailProvider from "next-auth/providers/email";
 import Google from "next-auth/providers/google";
-import { verifyPassword } from "./lib/crypto";
+import Nodemailer from "next-auth/providers/nodemailer";
+import { verifyPassword } from "./lib/utils";
 
 export const authConfig = {
   secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" as const, maxAge: 60 * 60 * 24 * 7 },
   adapter: PrismaAdapter(prisma) as any,
   providers: [
-    EmailProvider({
+    Nodemailer({
       server: {
         host: process.env.EMAIL_SERVER_HOST,
-        port: process.env.EMAIL_SERVER_PORT,
+        port: Number(process.env.EMAIL_SERVER_PORT || 587),
         auth: {
           user: process.env.EMAIL_SERVER_USER,
           pass: process.env.EMAIL_SERVER_PASSWORD,
         },
+        from: process.env.EMAIL_FROM,
       },
-      from: process.env.EMAIL_FROM,
-      maxAge: 60 * 30,
     }),
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -87,8 +86,6 @@ export const authConfig = {
       return session;
     },
   },
-} satisfies NextAuthOptions;
+} satisfies NextAuthConfig;
 
 export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
-export const GET = handlers.get;
-export const POST = handlers.post;

@@ -1,6 +1,8 @@
+import Header from "@/components/header";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,9 +20,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn(inter.className, "antialiased")}>
-        <main className="flex min-h-dvh flex-col items-center justify-center">
+      <body
+        className={cn(inter.className, "flex min-h-dvh flex-col antialiased")}
+      >
+        <Header />
+        <main className="flex flex-1 flex-col items-center justify-center">
           {children}
+          <Toaster position="bottom-center" />
         </main>
       </body>
     </html>

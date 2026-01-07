@@ -79,7 +79,26 @@
 }
 
 @layer base {
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  input:-webkit-autofill {
+    box-shadow: 0 0 0 1000px var(--background) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    transition: background-color 9999s ease-in-out 0s !important;
+  }
+
+  html {
+    scrollbar-gutter: stable both-edges;
   }
 }
