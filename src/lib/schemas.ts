@@ -54,3 +54,13 @@ const resetSchema = z
 type resetSchemaType = z.infer<typeof resetSchema>;
 
 export { resetSchema, type resetSchemaType };
+
+// magic
+
+const magicSchema = z.object({
+  email: z.email("Enter a valid email address."),
+});
+
+type magicSchemaType = z.infer<typeof magicSchema>;
+
+export { magicSchema, type magicSchemaType };
