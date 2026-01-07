@@ -1,12 +1,12 @@
 "use server";
 
 import { signIn } from "@/auth";
+import { sendResetEmail, sendVerificationEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
-import { loginSchema, schema } from "@/lib/schemas";
+import { forgotSchema, loginSchema, resetSchema, schema } from "@/lib/schemas";
 import { hashPassword } from "@/lib/utils";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { sendVerificationEmail } from "../mail";
 
 export async function Register(formData: unknown) {
   const result = schema.safeParse(formData);
@@ -142,7 +142,7 @@ export async function Login(formData: unknown) {
     if (response.error) {
       return {
         success: false,
-        message: "Unexpected error, try again later. 1",
+        message: "Unexpected error, try again later.",
       };
     }
 
@@ -154,6 +154,135 @@ export async function Login(formData: unknown) {
     return {
       success: false,
       message: "Wrong credentials. Try again.",
+    };
+  }
+}
+
+export async function ResetPassword(formData: unknown) {
+  const result = forgotSchema.safeParse(formData);
+
+  if (!result.success) {
+    const firstIssue = result.error.issues[0];
+    const message = firstIssue.message || "Invalid data provided.";
+
+    return {
+      success: false,
+      message,
+    };
+  }
+  const { email } = result.data;
+
+  try {
+    if (!email)
+      return {
+        success: false,
+        message: "Missing required fields.",
+      };
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        message: null,
+      };
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 mins;
+
+    await prisma.passwordResetToken.create({
+      data: { tokenHash, expiresAt, userId: user.id },
+    });
+
+    // Create verification links
+    const base = process.env.NEXTAUTH_URL!;
+    // values encoded to uri
+    const link = `${base}/forgot-password/get?token=${encodeURIComponent(token)}`;
+
+    await sendResetEmail(email!, link);
+
+    return {
+      success: true,
+      message: `A reset link has been sent to ${email}.`,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      message: "Invalid credentials.. Try again.",
+    };
+  }
+}
+
+export async function SetNewPassword(formData: unknown, token: string) {
+  const result = resetSchema.safeParse(formData);
+
+  if (!result.success) {
+    const firstIssue = result.error.issues[0];
+    const message = firstIssue.message || "Invalid data provided.";
+
+    return {
+      success: false,
+      message,
+    };
+  }
+  const { password, confirm } = result.data;
+
+  try {
+    if (!password || !confirm)
+      return {
+        success: false,
+        message: "Missing required fields.",
+      };
+
+    const newPassword = password;
+    if (!token || newPassword.length < 8)
+      return {
+        success: false,
+        message: "Token is long gone by now. Try resetting again.",
+      };
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const tokenRecord = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+    });
+    const invalid = !tokenRecord;
+    const expired = tokenRecord ? tokenRecord.expiresAt < new Date() : false;
+    const used = tokenRecord?.usedAt;
+    if (invalid || expired || used) {
+      return {
+        success: false,
+        message: "Token is long gone by now. Try resetting again.",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: tokenRecord.userId },
+      data: {
+        passwordHash: await hashPassword(newPassword),
+      },
+    });
+
+    await prisma.passwordResetToken.update({
+      where: { tokenHash },
+      data: { usedAt: new Date() },
+    });
+
+    return {
+      success: true,
+      message: "New password succesfully set.",
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      message: "Invalid credentials. Try again.",
     };
   }
 }

@@ -10,34 +10,36 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Login } from "@/lib/actions/auth";
-import { loginSchema, loginSchemaType } from "@/lib/schemas";
+import { SetNewPassword } from "@/lib/actions/auth";
+import { resetSchema, resetSchemaType } from "@/lib/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function SignInPage() {
+export default function SetPassword({ token }: { token: string }) {
   const [showPassword, setShowPassword] = useState(false);
   const { replace } = useRouter();
 
-  const form = useForm<loginSchemaType>({
+  const form = useForm<resetSchemaType>({
     defaultValues: {
-      email: "",
       password: "",
+      confirm: "",
     },
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(resetSchema),
   });
 
-  async function onSubmit(formData: loginSchemaType) {
-    const { success, message } = await Login(formData);
+  async function onSubmit(formData: resetSchemaType) {
+    const { success, message } = await SetNewPassword(formData, token);
     if (success) {
-      replace("/dashboard");
+      toast.success(message);
+      replace("/signin");
     } else {
       toast.info(message);
     }
+
+    console.log(formData);
   }
 
   return (
@@ -48,24 +50,6 @@ export default function SignInPage() {
       >
         <FormField
           control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  className="text-sm"
-                  placeholder="jan.kowalski@gmail.com"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
@@ -74,9 +58,9 @@ export default function SignInPage() {
                 <div className="relative">
                   <Input
                     {...field}
-                    type={showPassword ? "text" : "password"}
                     className="text-sm"
                     placeholder="••••••••"
+                    type={showPassword ? "text" : "password"}
                   />
                   <Button
                     className="absolute top-0 right-2 h-full px-3 text-xs hover:bg-transparent"
@@ -94,28 +78,33 @@ export default function SignInPage() {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="confirm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  className="text-sm"
+                  placeholder="••••••••"
+                  type="password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Button
           disabled={form.formState.isSubmitting}
           type="submit"
           className="mt-2"
         >
-          {form.formState.isSubmitting ? "Loggin in..." : "Login"}
+          {form.formState.isSubmitting ? "Setting..." : "Set new password"}
         </Button>
       </form>
-
-      <div className="mt-4 flex flex-col items-center gap-1 text-sm">
-        <div className="flex gap-1">
-          <p>Dont have an account?</p>
-          <Link className="underline" href={"/signup"}>
-            Register
-          </Link>
-        </div>
-        <div className="flex gap-1">
-          <Link className="underline" href={"/forgot-password"}>
-            Forgot your password?
-          </Link>
-        </div>
-      </div>
     </Form>
   );
 }
